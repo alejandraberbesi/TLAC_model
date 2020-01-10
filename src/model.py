@@ -1,17 +1,16 @@
 import os
-import google.auth
 from google.cloud import bigquery
 from google.cloud import bigquery_storage_v1beta1
+from google.oauth2 import service_account
 
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = "/mnt/c/Users/aleja/Documents/llaves/tlac-vision/tlac-vision-c0786b53c370.json"
+credentials= service_account.Credentials.from_service_account_file(
+    '/mnt/c/Users/aleja/Documents/llaves/tlac-vision/tlac-vision-c0786b53c370.json')
 
-credentials, your_project_id = google.auth.default(
-    scopes=["https://www.googleapis.com/auth/cloud-platform"]
-)
+project_id="tlac-vision"
 
 bqclient = bigquery.Client(
     credentials=credentials,
-    project=your_project_id,
+    project=project_id,
 )
 
 bqstorageclient = bigquery_storage_v1beta1.BigQueryStorageClient(
@@ -28,6 +27,5 @@ dataframe = (
     .result()
     .to_dataframe(bqstorage_client=bqstorageclient)
 )
-print(dataframe.head())
 
-#print(type(dataframe))
+print(dataframe.groupby('category').count())
