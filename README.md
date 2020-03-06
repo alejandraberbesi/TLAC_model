@@ -1,3 +1,3 @@
-#Model for literary categories prediction
+# Literary categories prediction
 
-Defining literary categories through Natural Language Processing. The input is the text from the inventory books' descriptions (found in the backcover). 
+Through Natural Language Processing. The input is the text from the inventory books' descriptions (found in the backcover). 
