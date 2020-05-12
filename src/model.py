@@ -1,17 +1,9 @@
-import os
 from google.cloud import bigquery
 from google.cloud import bigquery_storage_v1beta1
 from google.oauth2 import service_account
-from nltk.corpus import stopwords
-import re
-import pandas as pd 
-from tensorflow.keras.preprocessing.text import Tokenizer
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-from sklearn.model_selection import train_test_split
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Embedding, LSTM, Dropout, SpatialDropout1D
-from tensorflow.keras.callbacks import EarlyStopping
-import matplotlib.pylab as plt
+from fastai.text import TextDataBunch
+import pandas as pd
+import pathlib
 
 #process to import data from GCP:
 credentials= service_account.Credentials.from_service_account_file(
@@ -28,98 +20,42 @@ query_string = """
 SELECT *
 FROM `tlac-vision.book_backend.train_categories`
 """
+
 df = (
     bqclient.query(query_string)
     .result()
     .to_dataframe(bqstorage_client=bqstorageclient)
 )
 
-# sorting dataframe by book title
-df.sort_values("title", inplace = True) 
-# dropping rows of duplicate books 
-df.drop_duplicates(subset ="title", inplace = True) 
+# sorting dataframe by book category
+df=df.sort_values(['category'], ascending=[True])
+# dropping duplicate rows 
+df=df.drop_duplicates(['title']).reset_index(drop=True)
 
-print(df.groupby('category').count())  #unbalanced data set, few data available
+cat_count=df.iloc[:,0:2].groupby('category').count().rename(columns={'title': 'count'})
+cat_count['training']= round(0.75 * cat_count['count'],0)
 
-STOPWORDS = set(stopwords.words('spanish'))
-REPLACE_BY_SPACE_RE = re.compile('[\n\t!"#$%&()*+,-./:;<=>?\^_`{|}~@ ]')
+cat_count['acum']=cat_count['count'].cumsum()
+cat_count['init_idx']=cat_count['acum']-cat_count['count']
+cat_count['train_idx']=cat_count['init_idx']+cat_count['training']
 
-#print(df['description'].iloc[0])
-def clean_text(text):
-    text = text.lower()
-    text = REPLACE_BY_SPACE_RE.sub(' ', text) 
-    text = ' '.join(word for word in text.split() if word not in STOPWORDS) 
-    text = ' '.join(text.split())
-    return text
-df['description'] = df['description'].apply(clean_text)
-df['description'] = df['description'].str.replace('\d+', '') #remove digits
-#print(df['description'].iloc[0])
+train_set = pd.DataFrame(data=None, columns=df.columns)
 
-#df[df['description']==''].count()
-#df=df.drop(df[df['description']==''].index) #in case it occurs: remove blank cells of description
+for i in range(len(cat_count)):
+    i_idx=int(cat_count.iloc[i,3])
+    f_idx=int(cat_count.iloc[i,4])
+    train_set = train_set.append(df.iloc[i_idx:f_idx,:])
 
-max_words=1000 #most frequent words in descriptions
-#convert each word into an index:
-tokenizer = Tokenizer(num_words=max_words)
-tokenizer.fit_on_texts(df['description'].values)
-word_index = tokenizer.word_index 
+val_set=pd.DataFrame(data=None, columns=df.columns)
 
-#Transform each description in a sequence of integers/indexes of words
-a = tokenizer.texts_to_sequences(df['description'].values)
+for i in range(len(cat_count)):
+    i_idx=int(cat_count.iloc[i,4])
+    f_idx=int(cat_count.iloc[i,2])
+    val_set = val_set.append(df.iloc[i_idx:f_idx,:])
 
-b=list()
-for i in a:
-    b.append(len(i)) 
-MAX_SEQUENCE_LENGTH = max(b) #largest length of books descriptions
+path=pathlib.Path().absolute()
+data = TextDataBunch.from_df(path=path, train_df=train_set,valid_df=val_set)
+data.show_batch()
 
-#arrays with zeros and/or words indexes:
-X = pad_sequences(a, maxlen=MAX_SEQUENCE_LENGTH)
-#book categories classified with arrays of zeros and ones
-Y = pd.get_dummies(df['category']).values
 
-#test data= 20% of total data
-X_train, X_test, Y_train, Y_test = train_test_split(X,Y, test_size = 0.20, random_state = 100)
 
-#output_dim for embedding layer:
-EMBEDDING_DIM = 100 ######
-
-model = Sequential()
-#input_length=MAX_SEQUENCE_LENGTH
-model.add(Embedding(max_words, EMBEDDING_DIM, input_length=X.shape[1]))
-#how many units do i turn off:
-model.add(SpatialDropout1D(0.3))
-model.add(LSTM(100, dropout = 0.3, recurrent_dropout = 0.3))
-model.add(Dense(100, activation = 'relu'))
-model.add(Dropout(0.3))
-model.add(Dense(11, activation='softmax')) #11: number of book categories so far
-model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-
-epochs = 20
-batch_size = 64
-
-history = model.fit(X_train, Y_train, epochs=epochs, batch_size=batch_size,validation_split=0.1)
-
-accr = model.evaluate(X_test,Y_test)
-print('Test set\n  Loss: {:0.3f}\n  Accuracy: {:0.3f}'.format(accr[0],accr[1]))
-
-#graphs to see behaviour:---------------------------------
-
-acc = history.history['accuracy']
-val_acc = history.history['val_accuracy']
-loss = history.history['loss']
-val_loss = history.history['val_loss']
-epochs_range = range(epochs)
-
-plt.figure(figsize=(8, 5))
-plt.subplot(1, 2, 1)
-plt.plot(epochs_range, acc, label='Training Accuracy')
-plt.plot(epochs_range, val_acc, label='Validation Accuracy')
-plt.legend(loc='lower right')
-plt.title('Training and Validation Accuracy')
-
-plt.subplot(1, 2, 2)
-plt.plot(epochs_range, loss, label='Training Loss')
-plt.plot(epochs_range, val_loss, label='Validation Loss')
-plt.legend(loc='upper right')
-plt.title('Training and Validation Loss')
-plt.show()
