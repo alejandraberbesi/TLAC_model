@@ -65,7 +65,7 @@ for i in range(len(cat_count)):
     f_idx = int(cat_count.iloc[i, 2])
     val_set = val_set.append(df.iloc[i_idx:f_idx, :])
 
-# how to only input the description??
+# how to only input the description?? now has the title
 path = pathlib.Path().absolute()
 tok = fa.Tokenizer(tok_func=fa.SpacyTokenizer, lang='es')
 data = fa.TextDataBunch.from_df(
