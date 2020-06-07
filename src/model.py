@@ -2,7 +2,7 @@ from google.cloud import bigquery
 from google.cloud import bigquery_storage_v1beta1
 from google.oauth2 import service_account
 from langdetect import detect
-import fastai.text as fa
+from fastai.text import *
 import pandas as pd
 import pathlib
 
@@ -65,9 +65,10 @@ for i in range(len(cat_count)):
     f_idx = int(cat_count.iloc[i, 2])
     val_set = val_set.append(df.iloc[i_idx:f_idx, :])
 
-# how to only input the description?? now has the title
 path = pathlib.Path().absolute()
-tok = fa.Tokenizer(tok_func=fa.SpacyTokenizer, lang='es')
-data = fa.TextDataBunch.from_df(
-    path=path, train_df=train_set, valid_df=val_set, tokenizer=tok)
+
+# tokenization------------
+tok = Tokenizer(tok_func=SpacyTokenizer, lang='es')
+data = TextLMDataBunch.from_df(
+    path=path, train_df=train_set, valid_df=val_set, tokenizer=tok, text_cols='description', label_cols='category')
 data.show_batch()
