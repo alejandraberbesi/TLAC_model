@@ -5,6 +5,8 @@ from langdetect import detect
 from fastai.text import *
 import pandas as pd
 import pathlib
+import multifit
+from multifit.datasets import ULMFiTDataset, Dataset
 
 # to import data from GCP:
 credentials = service_account.Credentials.from_service_account_file(
@@ -72,3 +74,7 @@ tok = Tokenizer(tok_func=SpacyTokenizer, lang='es')
 data = TextLMDataBunch.from_df(
     path=path, train_df=train_set, valid_df=val_set, tokenizer=tok, text_cols='description', label_cols='category')
 data.show_batch()
+
+exp = multifit.from_pretrained('es_multifit_paper_version')
+
+exp.arch
