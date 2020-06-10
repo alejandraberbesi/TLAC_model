@@ -3,7 +3,6 @@ from google.cloud import bigquery_storage_v1beta1
 from google.oauth2 import service_account
 from langdetect import detect
 from fastai.text import *
-import pandas as pd
 import pathlib
 import multifit
 from multifit.datasets import ULMFiTDataset, Dataset
@@ -60,6 +59,8 @@ for i in range(len(cat_count)):
     f_idx = int(cat_count.iloc[i, 4])
     train_set = train_set.append(df.iloc[i_idx:f_idx, :])
 
+train_set_f = train_set.loc[:, ['category', 'description']]
+
 # creating validation set with 25% of data per category
 val_set = pd.DataFrame(data=None, columns=df.columns)
 for i in range(len(cat_count)):
@@ -67,14 +68,29 @@ for i in range(len(cat_count)):
     f_idx = int(cat_count.iloc[i, 2])
     val_set = val_set.append(df.iloc[i_idx:f_idx, :])
 
+val_set_f = val_set.loc[:, ['category', 'description']]
+
 path = pathlib.Path().absolute()
 
-# tokenization------------
-tok = Tokenizer(tok_func=SpacyTokenizer, lang='es')
-data = TextLMDataBunch.from_df(
-    path=path, train_df=train_set, valid_df=val_set, tokenizer=tok, text_cols='description', label_cols='category')
-data.show_batch()
+# train_set.to_csv('train.csv')  changes to structure?
+# val_set.to_csv('dev.csv')
 
-exp = multifit.from_pretrained('es_multifit_paper_version')
-
+lang = 'es'
+exp = multifit.from_pretrained(f'{lang}_multifit_paper_version')
+exp.replace_(name='multifit_paper_version20')
 exp.arch
+
+mldoc_dataset = exp.arch.dataset(path, exp.pretrain_lm.tokenizer)
+
+mldoc_dataset.databunch_from_df(
+    bunch_class=TextLMDataBunch, train_df=train_set_f, valid_df=val_set_f)
+
+# mldoc_dataset.show_batch()
+
+# list(train_set.columns.values)[1:]
+
+# tokenization------------
+#tok = Tokenizer(tok_func=SpacyTokenizer,lang='es')
+# data = TextLMDataBunch.from_df(
+#    path=path, train_df=train_set, valid_df=val_set, tokenizer=tok, text_cols='description', label_cols='category')
+# data.show_batch()
