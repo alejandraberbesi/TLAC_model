@@ -75,16 +75,23 @@ path = pathlib.Path().absolute()
 # train_set.to_csv('train.csv')  changes to structure?
 # val_set.to_csv('dev.csv')
 
-lang = 'es'
-exp = multifit.from_pretrained(f'{lang}_multifit_paper_version')
-exp.replace_(name='multifit_paper_version20')
-exp.arch
 
-mldoc_dataset = exp.arch.dataset(path, exp.pretrain_lm.tokenizer)
+exp = multifit.from_pretrained("es_multifit_paper_version")
+# exp.arch
+#fa_config =  exp.pretrain_lm.tokenizer.get_fastai_config(add_open_file_processor=True)
 
-mldoc_dataset.databunch_from_df(
-    bunch_class=TextLMDataBunch, train_df=train_set_f, valid_df=val_set_f)
+tok = Tokenizer(tok_func=SpacyTokenizer, lang='es')
+data = TextLMDataBunch.from_df(path=path, train_df=train_set_f, valid_df=val_set_f,
+                               tokenizer=tok, text_cols='description', label_cols='category', bs=64)
 
+
+learn = exp.finetune_lm.get_learner(data)
+learn.fit_one_cycle(1)
+learn.save_encoder("enc")
+learn.load_encoder('enc')
+
+
+#ml_dataset = exp.arch.dataset(path, exp.pretrain_lm.tokenizer, lang='es')
 # mldoc_dataset.show_batch()
 
 # list(train_set.columns.values)[1:]
