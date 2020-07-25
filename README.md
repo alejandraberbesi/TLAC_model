@@ -1,5 +1,4 @@
-#Predictive Model--DL 
-:books:
+# Predictive Model -- DL :books:
 
 Goal: Nlp and transfer learning to predict literary categories of books.
 
