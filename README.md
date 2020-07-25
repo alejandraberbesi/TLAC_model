@@ -1,3 +1,6 @@
-# Literary categories prediction
+# Multifit architecture
 
-Through Natural Language Processing. Inputs: texts from inventory books' descriptions (previously extracted from backcover photos). 
+
+
+![After reading: ](https://nlp.fast.ai/classification/2019/09/10/multifit.html)
+
