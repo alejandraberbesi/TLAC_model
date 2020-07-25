@@ -1,3 +1,7 @@
 # Literary categories prediction
 
-Through Natural Language Processing. Inputs: texts from inventory books' descriptions (previously extracted from backcover photos). 
+Goal: Using nlp and transfer learning to predict literary categories of books.
+
+Input: text with the descriptions of the books. 
+
+Main tech: Fastai (built on Pytorch).
