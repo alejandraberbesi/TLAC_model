@@ -127,3 +127,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+#multifit folder
+/mnt/c/Users/aleja/Documents/projects/TLAC_model/multifit/
