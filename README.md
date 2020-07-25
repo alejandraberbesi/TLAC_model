@@ -6,5 +6,4 @@ Dropout and word embeddings applied.
 
 Tokenization used with keras and some cleaning with nltk.
 
-epochs = 20
-batch_size = 64
+epochs = 20, batch_size = 64
