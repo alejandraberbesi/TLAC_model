@@ -4,7 +4,7 @@
 
 Goal: Nlp and transfer learning to predict literary categories of books.
 
-Does Hugging face library + BETO produce better results?
+Does transformers library-->BETO pre-trained model produce better results?
 
 Input: text with the descriptions of the books. 
 
