@@ -6,4 +6,4 @@ Input: text with the descriptions of the books.
 
 Code in Python.
 
-Library: Fast AI, model arch: AWD_LSTM
+Library: Fast AI v2, model arch: AWD_LSTM
